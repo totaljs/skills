@@ -1,0 +1,15 @@
+{
+	"name": "totaljs",
+	"description": "Agent skills for the Total.js Platform",
+	"owner": {
+		"name": "Total.js",
+		"url": "https://www.totaljs.com"
+	},
+	"plugins": [
+		{
+			"name": "totaljs",
+			"source": "./",
+			"description": "Agent skills for the Total.js Platform"
+		}
+	]
+}

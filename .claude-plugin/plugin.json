@@ -1,0 +1,12 @@
+{
+	"name": "totaljs",
+	"description": "Agent skills for the Total.js Platform",
+	"author": {
+		"name": "Total.js",
+		"url": "https://www.totaljs.com"
+	},
+	"homepage": "https://github.com/totaljs/skills",
+	"repository": "https://github.com/totaljs/skills",
+	"license": "MIT",
+	"keywords": ["totaljs", "total5", "nodejs"]
+}

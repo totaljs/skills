@@ -1,0 +1,46 @@
+# Total.js skills
+
+> Conventions and recipes for building Total.js 5 (total5) applications in Node.js: websites with views and SEO, and API backends with plugins, actions, AUTH(), PostgreSQL, uploads, WebSockets and CRON. Written for AI coding assistants.
+
+Total.js is a global/singleton framework, not Express or Nest. Read the cookbook before writing Total.js code. Start with the skill entry point, or load the whole cookbook as one file.
+
+## Start here
+
+- [Skill entry point](https://raw.githubusercontent.com/totaljs/skills/main/skills/totaljs-cookbook/SKILL.md): the rules that always apply and a task → file table
+- [Whole cookbook in one file](https://raw.githubusercontent.com/totaljs/skills/main/COOKBOOK.md): all sections below, about 2,400 lines
+
+## Cookbook sections
+
+- [1. Architecture and principles](https://raw.githubusercontent.com/totaljs/skills/main/skills/totaljs-cookbook/references/01-architecture.md): the global/singleton model, require() policy, where each kind of code goes
+- [2. Project structure](https://raw.githubusercontent.com/totaljs/skills/main/skills/totaljs-cookbook/references/02-project-structure.md): directories, load order, which shape for which project
+- [3. Running, debug and release](https://raw.githubusercontent.com/totaljs/skills/main/skills/totaljs-cookbook/references/03-running.md): index.js, debug and release mode, .gitignore
+- [4. Configuration](https://raw.githubusercontent.com/totaljs/skills/main/skills/totaljs-cookbook/references/04-configuration.md): the config file, CONF, typed keys, environment variables
+- [5. Coding style](https://raw.githubusercontent.com/totaljs/skills/main/skills/totaljs-cookbook/references/05-coding-style.md): formatting, naming, comments, error messages
+- [6. Globals](https://raw.githubusercontent.com/totaljs/skills/main/skills/totaljs-cookbook/references/06-globals.md): every global: UID, GUID, HASH, NOW, CACHE, BLOCKED, ENCRYPTREQ, MAIL
+- [7. Sharing code: modules, definitions, FUNC and MAIN](https://raw.githubusercontent.com/totaljs/skills/main/skills/totaljs-cookbook/references/07-sharing-code.md): modules (MODS), definitions, FUNC, MAIN
+- [8. Actions: NEWACTION and NEWSCHEMA](https://raw.githubusercontent.com/totaljs/skills/main/skills/totaljs-cookbook/references/08-actions.md): NEWACTION, NEWSCHEMA, options, data schema types, the action $, ACTION()
+- [9. Controllers and routing](https://raw.githubusercontent.com/totaljs/skills/main/skills/totaljs-cookbook/references/09-controllers-routing.md): ROUTE(), controller responses, auth flags, API routing, route flags, CORS
+- [10. Plugins](https://raw.githubusercontent.com/totaljs/skills/main/skills/totaljs-cookbook/references/10-plugins.md): plugin structure, index.js exports, rules
+- [11. Authentication and authorization](https://raw.githubusercontent.com/totaljs/skills/main/skills/totaljs-cookbook/references/11-auth.md): AUTH(), tokens, sessions, login, permissions
+- [12. PostgreSQL: DATA and QueryBuilder](https://raw.githubusercontent.com/totaljs/skills/main/skills/totaljs-cookbook/references/12-postgresql.md): DATA and QueryBuilder, autoquery, recipes, SQL naming and table layout
+- [13. Data without a database: MEMORIZE and REPO](https://raw.githubusercontent.com/totaljs/skills/main/skills/totaljs-cookbook/references/13-memorize.md): MEMORIZE and REPO for small data sets
+- [14. Filesystem, PATH and uploads](https://raw.githubusercontent.com/totaljs/skills/main/skills/totaljs-cookbook/references/14-filesystem-uploads.md): PATH, safe paths, upload routes, FILESTORAGE, signed downloads
+- [15. HTTP client: RESTBuilder, REQUEST and DOWNLOAD](https://raw.githubusercontent.com/totaljs/skills/main/skills/totaljs-cookbook/references/15-http-client.md): RESTBuilder, REQUEST, DOWNLOAD
+- [16. Periodic tasks, cron, events and workers](https://raw.githubusercontent.com/totaljs/skills/main/skills/totaljs-cookbook/references/16-jobs-events-workers.md): ON('service'), CRON(), job queue, workers, events
+- [17. WebSockets](https://raw.githubusercontent.com/totaljs/skills/main/skills/totaljs-cookbook/references/17-websockets.md): SOCKET routes, authentication, sending to a user
+- [18. Extending the framework](https://raw.githubusercontent.com/totaljs/skills/main/skills/totaljs-cookbook/references/18-extending.md): Total.extend(), DEF, MIDDLEWARE()
+- [19. Views and layout](https://raw.githubusercontent.com/totaljs/skills/main/skills/totaljs-cookbook/references/19-views.md): view syntax, layout, sections
+- [20. Local methods for views (repository.func)](https://raw.githubusercontent.com/totaljs/skills/main/skills/totaljs-cookbook/references/20-view-helpers.md): local Func object passed through repository.func
+- [21. Useful prototypes and utilities](https://raw.githubusercontent.com/totaljs/skills/main/skills/totaljs-cookbook/references/21-utilities.md): String/Array/Date/Number prototypes, Markdown, utilities
+- [22. SEO recipes](https://raw.githubusercontent.com/totaljs/skills/main/skills/totaljs-cookbook/references/22-seo.md): head builder, JSON-LD, sitemap.xml, robots.txt, llms.txt
+- [23. Frontend without a framework](https://raw.githubusercontent.com/totaljs/skills/main/skills/totaljs-cookbook/references/23-frontend.md): live search, clipboard, iframe previews, favicons, contrast
+- [24. Performance](https://raw.githubusercontent.com/totaljs/skills/main/skills/totaljs-cookbook/references/24-performance.md): caching, precomputing, database query rules
+- [25. Robustness and security](https://raw.githubusercontent.com/totaljs/skills/main/skills/totaljs-cookbook/references/25-security.md): atomic data swaps, escaping, backend security checklist
+- [26. Anti-patterns](https://raw.githubusercontent.com/totaljs/skills/main/skills/totaljs-cookbook/references/26-anti-patterns.md): what not to do, each with the Total.js replacement
+- [27. Gotchas](https://raw.githubusercontent.com/totaljs/skills/main/skills/totaljs-cookbook/references/27-gotchas.md): known pitfalls and their solutions
+- [28. Checklist for a new project](https://raw.githubusercontent.com/totaljs/skills/main/skills/totaljs-cookbook/references/28-checklist.md): checklists for a website, an API backend and a new plugin
+
+## Optional
+
+- [Repository map and editing rules](https://raw.githubusercontent.com/totaljs/skills/main/AGENTS.md)
+- [README](https://raw.githubusercontent.com/totaljs/skills/main/README.md): installation for Claude Code, Codex, Gemini CLI, Kimi and chat assistants
