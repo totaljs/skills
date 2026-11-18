@@ -52,13 +52,15 @@ Total.js is not Express and not Nest. Do not redesign it around routers, DI cont
 
 The running application is a **single global framework instance**. Files are auto-loaded by directory. Application code shares behavior through globals, not imports.
 
-### The five rules
+### The seven rules
 
 1. **Globals, not imports.** `FUNC`, `MAIN`, `MODS`, `CONF`, `DATA`, `PATH`… already exist ([section 6](#6-globals)). There is no service locator to invent — they are the locator.
 2. **Directories, not registration.** Put a file in the right directory and the framework loads it ([section 2](#2-project-structure)).
 3. **Actions own the domain.** Business rules live in `NEWACTION` / `NEWSCHEMA` ([section 8](#8-actions-newaction-and-newschema)). Controllers own HTTP, files and sockets only ([section 9](#9-controllers-and-routing)).
 4. **A feature is a plugin.** `plugins/<feature>/index.js` + `schemas/` ([section 10](#10-plugins)).
 5. **One of each.** One `AUTH()` delegate, one `CORS()` call, one API gateway (`POST /api/`), one response envelope (`$.success()`).
+6. **Code is written for a person.** Someone who opens the file in a year must understand it without running it: plain names, short functions and a comment wherever the reason is not obvious from the code ([section 5](#5-coding-style), "Comments").
+7. **Code is written to be copied.** An action, a module or a plugin should work in the next project after copying its file or folder: what differs between projects is in `config`, and the file says at its top what it needs ([section 5](#5-coding-style), "Reusable code").
 
 ### `require()` policy
 
@@ -306,7 +308,43 @@ Reuse the same names across projects, and use the same names in SQL and JS:
 
 ### Comments
 
-Explain non-obvious constraints, not what the next line does. Do not paste the same `$` field dump into every action. A view starts with a comment describing its model ([section 19](#19-views-and-layout)).
+The code must be readable by a person, not only correct. Write a comment where a reader would otherwise have to guess; leave it out where the code already says the same thing.
+
+Comment these places:
+
+- **The top of a file**: what the file does, what it needs (other actions, tables, `config` keys) and how to call it, with one example of a call and of its result.
+- **A constant with a meaning**: a limit, a timeout, a threshold, and why it has this value (`// The privacy policy promises 48 hours and the cleaning runs once an hour, so the limit is an hour shorter.`).
+- **A decision that looks wrong or could be "simplified" into a bug**: a workaround, an order of steps that matters, a check that seems redundant, a deliberate omission.
+- **A rule of the business or of the law** that the code enforces, in the words of that rule.
+- **A regular expression, a long SQL query or a formula**: what it matches or computes, in one sentence.
+- **A view**: a comment describing its model at the top ([section 19](#19-views-and-layout)).
+
+Do not comment what the next line does (`// increments the counter`), do not paste the same `$` field dump into every action, and do not keep commented-out code. A comment that no longer matches the code is worse than none: change it together with the code.
+
+```js
+// avoid: repeats the code
+// Checks the limit
+if (BLOCKED({ ip: 'insert_' + $.ip }, LIMITS.insert)) {
+
+// preferred: says why
+// The offer waits for the confirmation of the e-mail: until then it is not processed and visitors do not see it.
+model.isconfirmed = false;
+```
+
+Readable code needs fewer comments in the first place: name a value instead of explaining a number, return early instead of nesting, and split a function that does two things.
+
+### Reusable code
+
+Write every action, module and plugin so that it can be copied into another project and work there. Reuse by copying a file is the normal way of sharing code between Total.js projects, so a unit that cannot be copied is a unit that will be rewritten.
+
+- **One unit, one file or folder.** An action file, a module or a `plugins/<feature>/` folder carries everything it needs: its constants, its small helpers, and next to it its SQL (`init.sql`), its data and its README.
+- **Nothing of the project inside.** A URL, a token, a limit, a name of the product or an e-mail address is read from `config` (`CONF.<key>`) with a safe default, never written into the code ([section 4](#4-configuration)).
+- **State the dependencies at the top.** The first comment lists the actions, tables and `config` keys the file relies on, so a person who copies it knows what else to bring.
+- **Talk through public contracts.** Call other code with `ACTION()` / `$.action()`, `MODS.<name>` or an event, with declared `input` and a described output. Do not reach into the internals of another file.
+- **Generic names.** `items`, `id`, `name`, `dtcreated` ([Names](#names) above) and generic mechanisms (a queue of e-mails, a cache table, a rate limit) instead of names of one product.
+- **A small helper may be repeated.** A three-line function copied into two self-contained files is better than a shared file that both must then travel with. Move a helper to `FUNC` or `MODS` only when it is real shared behavior ([section 7](#7-sharing-code-modules-definitions-func-and-main)).
+
+Before finishing a unit, ask: *could this file be dropped into an empty Total.js project and work after setting its `config` keys?* If not, find what ties it to this project and move that to `config` or to the caller.
 
 ### Errors and localization
 
@@ -1354,10 +1392,47 @@ The client then controls the list through the query string: `page`, `limit`, `so
 - `.promise($)` — an error (including `.error(404)`) is sent through `$.invalid()` and the action stops. Use it in actions.
 - `.promise()` — rejects; you must `try/catch`. Use it outside a request (`AUTH`, cron, `FUNC` helpers without `$`).
 
-### Raw SQL
+### Builder first, raw SQL last
+
+Write a query with the builder (`DATA.read` / `find` / `list` / `count` / `insert` / `modify` / `remove`) whenever it can express it. It is a little slower than a hand-written statement, but a person reads it at a glance: the table, the fields and each condition are on their own, values are bound for you and `.error(404)` replaces the `if (!rows.length)` that follows every raw query.
 
 ```js
-var rows = await DATA.query('SELECT id, name FROM tbl_user WHERE email=$1', [email]).promise($);
+// avoid: the reader has to parse the SQL and the handling of an empty result
+var rows = await DATA.query('SELECT id,name,email FROM tbl_item WHERE id=$1 AND email=$2 AND isremoved IS NOT TRUE LIMIT 1', [model.id, email]).promise($);
+if (!rows.length) {
+	$.invalid(404);
+	return;
+}
+var item = rows[0];
+
+// preferred
+var item = await DATA.read('tbl_item').fields('id,name,email').id(model.id).where('email', email).where('isremoved IS NOT TRUE').error(404).promise($);
+```
+
+What the builder covers and is easy to miss:
+
+```js
+// A condition the builder has no method for: where() with one argument is a raw fragment (the same as query())
+DATA.read('tbl_access').id(id).where('dtexpire > timezone(\'utc\', now())');
+
+// A value computed by the database: a key that starts with "=" is written as raw SQL
+DATA.insert('tbl_access', { id: UID(), email: email, '=dtcreated': 'timezone(\'utc\', now())' });
+DATA.modify('tbl_item', { isremoved: true, '=dtremoved': 'timezone(\'utc\', now())' }).id(id).error(404);
+
+// The changed or removed rows: returning() (with first() one row, without it an array)
+DATA.modify('tbl_item', { isconfirmed: true, token: null }).where('token', token).first().returning('id');
+DATA.remove('tbl_item').where('dtend < timezone(\'utc\', now())').returning('pictures');
+
+// A number of rows
+var count = await DATA.count('tbl_access').where('email', email).promise($);
+```
+
+A raw fragment and a `=` value are trusted SQL: constants and names of columns only, never a value from a request.
+
+Keep `DATA.query()` for what the builder cannot say clearly: joins and subqueries, `GROUP BY` and aggregates, expressions in the list of fields (`COALESCE(…) AS name`, `CASE` — `fields()` splits its argument at commas), a parameter inside an expression (`$1 = ANY(pictures)`), PostGIS and SQL that is built dynamically. Do not replace one join with several builder calls in a loop.
+
+```js
+var rows = await DATA.query('SELECT c.kind, COUNT(*)::int AS count FROM tbl_item i JOIN cl_item c ON c.id=i.typeid GROUP BY 1', []).promise($);
 ```
 
 **Never concatenate request values into SQL.** `builder.query('…')` is for trusted fragments only.
@@ -2326,7 +2401,7 @@ Remote content (e.g. documentation pulled from a repository) is loaded at startu
 - **Input:** every action declares `input` / `query` / `params`; never read undeclared fields from `$.body`.
 - **Identity:** `userid`, roles and permissions come from `$.user`, never from the payload.
 - **Ownership:** part of the query (`.where('userid', $.user.id)`), with `.error(404)`.
-- **SQL:** QueryBuilder or parameterized `DATA.query(sql, [args])`; no string concatenation.
+- **SQL:** QueryBuilder first, parameterized `DATA.query(sql, [args])` only where the builder cannot express the query; no string concatenation.
 - **Paths:** generated names on known roots; `PATH.verify()` is not a sanitizer ([section 14](#14-filesystem-path-and-uploads)).
 - **Uploads:** a size limit on the route (`<10MB`), an extension whitelist, signed download ids.
 - **Output:** `FUNC.user_safe()` strips password hashes, reset tokens and secrets; never return raw rows of `tbl_user`.
@@ -2356,6 +2431,7 @@ The mistakes that agents and newcomers produce most often. Each has a framework-
 | `https.request({...})`, `fetch` on the server | `RESTBuilder`, `REQUEST()`, `DOWNLOAD()` |
 | `DB()` everywhere (older docs) | `DATA`; `DB()` only for a fresh controller |
 | Loading a table and filtering in JS; a `DATA.read` per id in a loop | `.where()`; `.in('id', ids)` |
+| `DATA.query('SELECT … WHERE id=$1 LIMIT 1')` followed by `if (!rows.length)` for a plain read, insert, update or delete | `DATA.read('tbl').id(id).error(404)`, `DATA.insert()`, `DATA.modify()`, `DATA.remove()`; `DATA.query()` only for joins, aggregates and expressions ([section 12](#12-postgresql-data-and-querybuilder)) |
 | `ROUTE('POST /x/', fn, ['upload'], 1024)` (Total.js 4) | `ROUTE('POST /x/ @upload <1MB', fn)` |
 | `CORS()` in every plugin | one `CORS()` in a definition |
 | One 2,000-line `definitions/func.js` | several definitions split by concern |
@@ -2365,6 +2441,8 @@ The mistakes that agents and newcomers produce most often. Each has a framework-
 | `src/`, `lib/`, `services/`, `repositories/`, `utils/`, `middleware/` | the framework directories ([section 2](#2-project-structure)) |
 | `const` for every local, `forEach` with arrows, spaces, double quotes | `var`, classic `for`, tabs, single quotes ([section 5](#5-coding-style)) |
 | Copying another product's tables and schema names | copy the mechanism: plugin + `NEWSCHEMA` + `DATA` + `FUNC` |
+| A file without a comment at its top; `// sets the value` above `x = value`; a "magic" number without a reason | A header that says what the file does and needs; comments that say why ([section 5](#5-coding-style), "Comments") |
+| A product name, URL, token or limit written into an action; a helper that only works with this project's tables | Values in `config`, dependencies listed at the top, a unit that can be copied ([section 5](#5-coding-style), "Reusable code") |
 
 ---
 
@@ -2406,6 +2484,8 @@ The mistakes that agents and newcomers produce most often. Each has a framework-
 - [ ] logic in `actions/`, the controller only calls actions and renders
 - [ ] view helpers in a local `Func` + `view.repository.func = Func`; shared helpers on `FUNC`
 - [ ] integrations and shared libraries in `modules/` (`MODS.<name>`), never `require()`
+- [ ] every file starts with a comment (what it does, what it needs, how to call it); constants and non-obvious decisions say why
+- [ ] every action, module and plugin can be copied to another project: project values in `config`, dependencies listed at the top
 
 **Layout and views**
 - [ ] `@{section('head')}` in the layout, `@{section head}…@{end}` in views
