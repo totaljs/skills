@@ -197,13 +197,43 @@ Total.run(options);
 
 | Command | Mode | Note |
 |---|---|---|
-| `node index.js` | debug | port **8000**, the watcher reloads changed controllers, actions, views and modules |
+| `node index.js` | debug | port **8000**, the watcher recompiles changed JavaScript (controllers, actions, modules, definitions); views are read fresh on every request |
 | `node index.js release` | release | views are cached, HTML is minified |
 
-- In debug mode you **don't need to restart** the server after editing files — the watcher reloads them on its own (the log shows `--- UPD --- /controllers/…`). When `config` changes, the watcher restarts the whole process.
+- In debug mode you **don't need to restart** the server after editing files — the watcher does it on its own (see "After a change" below). When `config` changes, the watcher restarts the whole process.
 - A numeric argument sets the port: `node index.js 8001`.
 - The debug runner creates `index.js.json`, `index.js.map` and `index.pid` in the project root → they belong in `.gitignore`.
 - In production the app can listen on a unix socket: `options.unixsocket = '/path/app.socket'; options.unixsocket777 = true;`
+
+### After a change: what is reloaded and how to know
+
+The watcher of the debug mode treats two kinds of files differently:
+
+| What changed | What happens | In the log |
+|---|---|---|
+| JavaScript that must be recompiled: `controllers/`, `actions/`, `schemas/`, `modules/`, `definitions/`, `plugins/` | the application is restarted with the new code | a line `--- UPD --- [ 2026-01-15 10:20:44 ] --------> /actions/items.js` |
+| A view (`views/`) | nothing is restarted, the next request renders the new view | nothing |
+| A static file (`public/`) | served as it is on the next request | nothing |
+| `config` | the whole process is restarted | the start banner again |
+
+The log is the output of the debug process: the terminal it runs in, or the file the output is written to (for example `logs/debug.log`).
+
+- **After editing JavaScript, wait for its `UPD` line** and for the port to answer again before testing. The restart usually takes a few seconds, but a busy watcher can take much longer, so a fixed pause is a guess: a test that runs too early silently checks the old code and "passes" or "fails" for the wrong reason.
+- **After editing only a view or a static file, test at once.** There will be no line in the log to wait for.
+- Save a real change: the watcher looks for changed content, and `touch` alone may not be noticed.
+- A restart empties everything kept in the memory of the process: `MAIN`, `CACHE`, the counters of `BLOCKED()` and cached sessions. A test of a rate limit has to finish between two restarts.
+- `ON('ready')` runs again after every restart, so a handler of it must be safe to repeat.
+
+```bash
+# before the edit: how many times the log already mentions the file
+count=$(grep -c '/actions/items.js' logs/debug.log)
+
+# ... edit actions/items.js ...
+
+# wait until the watcher picked up this change and the application answers again
+until [ "$(grep -c '/actions/items.js' logs/debug.log)" -gt "$count" ]; do sleep 2; done
+until curl -s -o /dev/null http://localhost:8000/; do sleep 2; done
+```
 
 > **Gotcha:** don't start Total.js via `node -e "require('total5'); Total.run()"`. The `flow-flowstream.js` module reads `process.argv[1]`, which doesn't exist with `-e`, and the app crashes. Always run a file.
 
@@ -2453,6 +2483,7 @@ The mistakes that agents and newcomers produce most often. Each has a framework-
 | `$.invalid(404)` / `$.invalidsafe()` returns **JSON** | a custom `notfound($)` with `$.response.status = 404` and a view |
 | `@{!section('head')}` in the layout crashes | use `@{section('head')}` |
 | `node -e "…Total.run()"` crashes on `process.argv[1]` | always run a file (`node index.js`) |
+| A test right after editing an action or a controller checks the **old code** | wait for the `--- UPD ---` line of the file in the debug log and for the port to answer ([section 3](#3-running-debug-and-release), "After a change"); a change of a view needs no waiting |
 | `fetch` doesn't exist on the server (older Node.js) | `REQUEST()` / `DOWNLOAD()` |
 | `ON('ready')` in a controller didn't fire reliably | `setImmediate(load)` in `exports.install` |
 | CSS resets (normalize.css, also bundled in the Total.js UI library `spa.min.css`) give `input[type=search]` `box-sizing: content-box` → the field overflows | `box-sizing: border-box` directly on the input |
