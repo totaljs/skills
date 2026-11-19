@@ -7,6 +7,8 @@
 - [ ] logic in `actions/`, the controller only calls actions and renders
 - [ ] view helpers in a local `Func` + `view.repository.func = Func`; shared helpers on `FUNC`
 - [ ] integrations and shared libraries in `modules/` (`MODS.<name>`), never `require()`
+- [ ] every file starts with a comment (what it does, what it needs, how to call it); constants and non-obvious decisions say why
+- [ ] every action, module and plugin can be copied to another project: project values in `config`, dependencies listed at the top
 
 **Layout and views**
 - [ ] `@{section('head')}` in the layout, `@{section head}…@{end}` in views

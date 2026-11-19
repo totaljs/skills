@@ -4,13 +4,15 @@ Total.js is not Express and not Nest. Do not redesign it around routers, DI cont
 
 The running application is a **single global framework instance**. Files are auto-loaded by directory. Application code shares behavior through globals, not imports.
 
-### The five rules
+### The seven rules
 
 1. **Globals, not imports.** `FUNC`, `MAIN`, `MODS`, `CONF`, `DATA`, `PATH`… already exist ([section 6](06-globals.md)). There is no service locator to invent — they are the locator.
 2. **Directories, not registration.** Put a file in the right directory and the framework loads it ([section 2](02-project-structure.md)).
 3. **Actions own the domain.** Business rules live in `NEWACTION` / `NEWSCHEMA` ([section 8](08-actions.md)). Controllers own HTTP, files and sockets only ([section 9](09-controllers-routing.md)).
 4. **A feature is a plugin.** `plugins/<feature>/index.js` + `schemas/` ([section 10](10-plugins.md)).
 5. **One of each.** One `AUTH()` delegate, one `CORS()` call, one API gateway (`POST /api/`), one response envelope (`$.success()`).
+6. **Code is written for a person.** Someone who opens the file in a year must understand it without running it: plain names, short functions and a comment wherever the reason is not obvious from the code ([section 5](05-coding-style.md), "Comments").
+7. **Code is written to be copied.** An action, a module or a plugin should work in the next project after copying its file or folder: what differs between projects is in `config`, and the file says at its top what it needs ([section 5](05-coding-style.md), "Reusable code").
 
 ### `require()` policy
 

@@ -5,6 +5,7 @@
 | `$.invalid(404)` / `$.invalidsafe()` returns **JSON** | a custom `notfound($)` with `$.response.status = 404` and a view |
 | `@{!section('head')}` in the layout crashes | use `@{section('head')}` |
 | `node -e "…Total.run()"` crashes on `process.argv[1]` | always run a file (`node index.js`) |
+| A test right after editing an action or a controller checks the **old code** | wait for the `--- UPD ---` line of the file in the debug log and for the port to answer ([section 3](03-running.md), "After a change"); a change of a view needs no waiting |
 | `fetch` doesn't exist on the server (older Node.js) | `REQUEST()` / `DOWNLOAD()` |
 | `ON('ready')` in a controller didn't fire reliably | `setImmediate(load)` in `exports.install` |
 | CSS resets (normalize.css, also bundled in the Total.js UI library `spa.min.css`) give `input[type=search]` `box-sizing: content-box` → the field overflows | `box-sizing: border-box` directly on the input |

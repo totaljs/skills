@@ -37,7 +37,7 @@ Remote content (e.g. documentation pulled from a repository) is loaded at startu
 - **Input:** every action declares `input` / `query` / `params`; never read undeclared fields from `$.body`.
 - **Identity:** `userid`, roles and permissions come from `$.user`, never from the payload.
 - **Ownership:** part of the query (`.where('userid', $.user.id)`), with `.error(404)`.
-- **SQL:** QueryBuilder or parameterized `DATA.query(sql, [args])`; no string concatenation.
+- **SQL:** QueryBuilder first, parameterized `DATA.query(sql, [args])` only where the builder cannot express the query; no string concatenation.
 - **Paths:** generated names on known roots; `PATH.verify()` is not a sanitizer ([section 14](14-filesystem-uploads.md)).
 - **Uploads:** a size limit on the route (`<10MB`), an extension whitelist, signed download ids.
 - **Output:** `FUNC.user_safe()` strips password hashes, reset tokens and secrets; never return raw rows of `tbl_user`.

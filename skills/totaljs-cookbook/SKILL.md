@@ -37,6 +37,7 @@ The whole cookbook in one file is `COOKBOOK.md` in the repository root (generate
 **Data**
 
 - SQL goes through `DATA` (`DATA.find/list/read/insert/modify/remove/query`), with `.promise($)` in actions. No ORM, no `require('pg')`, no string concatenation in SQL.
+- Builder first, raw SQL last: `DATA.read('tbl_user').id(id)`, `DATA.find()`, `DATA.list()` are preferred; `DATA.query()` only where the builder cannot express the query.
 - Filter in the query (`.where()`, `.in()`), never load a table to filter it in JavaScript.
 - Tables `tbl_*`, views `view_*`, lowercase names, `id` from `UID()`, dates `dt*`, booleans `is*`.
 - Runtime state on `MAIN`, expiring values in `CACHE`, nothing durable in `TEMP`.
@@ -50,13 +51,15 @@ The whole cookbook in one file is `COOKBOOK.md` in the repository root (generate
 
 - Tabs, semicolons, single quotes, `var`-first (no `const` inside functions), classic `for` loops.
 - User-facing errors use localization markup: `$.invalid('@(Invalid credentials)')`.
+- Code is written for a person: plain names, short functions and a comment wherever the reason is not obvious from the code.
+- Code is written to be copied: an action, a module or a plugin works in the next project after copying its file or folder; what differs between projects is in `config`.
 
 ## Reference files
 
 | Task | Read |
 |---|---|
 | Starting a project, deciding where code goes | [01-architecture](references/01-architecture.md), [02-project-structure](references/02-project-structure.md), [28-checklist](references/28-checklist.md) |
-| `index.js`, debug/release, ports | [03-running](references/03-running.md) |
+| `index.js`, debug/release, ports, what restarts after a change | [03-running](references/03-running.md) |
 | `config`, `CONF`, environment variables | [04-configuration](references/04-configuration.md) |
 | Formatting and naming | [05-coding-style](references/05-coding-style.md) |
 | Which global does what (`UID`, `NOW`, `CACHE`, `BLOCKED`, `MAIL`…) | [06-globals](references/06-globals.md) |

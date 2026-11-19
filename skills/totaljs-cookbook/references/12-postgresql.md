@@ -105,10 +105,47 @@ The client then controls the list through the query string: `page`, `limit`, `so
 - `.promise($)` — an error (including `.error(404)`) is sent through `$.invalid()` and the action stops. Use it in actions.
 - `.promise()` — rejects; you must `try/catch`. Use it outside a request (`AUTH`, cron, `FUNC` helpers without `$`).
 
-### Raw SQL
+### Builder first, raw SQL last
+
+Write a query with the builder (`DATA.read` / `find` / `list` / `count` / `insert` / `modify` / `remove`) whenever it can express it. It is a little slower than a hand-written statement, but a person reads it at a glance: the table, the fields and each condition are on their own, values are bound for you and `.error(404)` replaces the `if (!rows.length)` that follows every raw query.
 
 ```js
-var rows = await DATA.query('SELECT id, name FROM tbl_user WHERE email=$1', [email]).promise($);
+// avoid: the reader has to parse the SQL and the handling of an empty result
+var rows = await DATA.query('SELECT id,name,email FROM tbl_item WHERE id=$1 AND email=$2 AND isremoved IS NOT TRUE LIMIT 1', [model.id, email]).promise($);
+if (!rows.length) {
+	$.invalid(404);
+	return;
+}
+var item = rows[0];
+
+// preferred
+var item = await DATA.read('tbl_item').fields('id,name,email').id(model.id).where('email', email).where('isremoved IS NOT TRUE').error(404).promise($);
+```
+
+What the builder covers and is easy to miss:
+
+```js
+// A condition the builder has no method for: where() with one argument is a raw fragment (the same as query())
+DATA.read('tbl_access').id(id).where('dtexpire > timezone(\'utc\', now())');
+
+// A value computed by the database: a key that starts with "=" is written as raw SQL
+DATA.insert('tbl_access', { id: UID(), email: email, '=dtcreated': 'timezone(\'utc\', now())' });
+DATA.modify('tbl_item', { isremoved: true, '=dtremoved': 'timezone(\'utc\', now())' }).id(id).error(404);
+
+// The changed or removed rows: returning() (with first() one row, without it an array)
+DATA.modify('tbl_item', { isconfirmed: true, token: null }).where('token', token).first().returning('id');
+DATA.remove('tbl_item').where('dtend < timezone(\'utc\', now())').returning('pictures');
+
+// A number of rows
+var count = await DATA.count('tbl_access').where('email', email).promise($);
+```
+
+A raw fragment and a `=` value are trusted SQL: constants and names of columns only, never a value from a request.
+
+Keep `DATA.query()` for what the builder cannot say clearly: joins and subqueries, `GROUP BY` and aggregates, expressions in the list of fields (`COALESCE(…) AS name`, `CASE` — `fields()` splits its argument at commas), a parameter inside an expression (`$1 = ANY(pictures)`), PostGIS and SQL that is built dynamically. Do not replace one join with several builder calls in a loop.
+
+```js
+var rows = await DATA.query('SELECT c.kind, COUNT(*)::int AS count FROM tbl_item i JOIN cl_item c ON c.id=i.typeid GROUP BY 1', []).promise($);
 ```
 
 **Never concatenate request values into SQL.** `builder.query('…')` is for trusted fragments only.

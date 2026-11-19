@@ -18,6 +18,7 @@ The mistakes that agents and newcomers produce most often. Each has a framework-
 | `https.request({...})`, `fetch` on the server | `RESTBuilder`, `REQUEST()`, `DOWNLOAD()` |
 | `DB()` everywhere (older docs) | `DATA`; `DB()` only for a fresh controller |
 | Loading a table and filtering in JS; a `DATA.read` per id in a loop | `.where()`; `.in('id', ids)` |
+| `DATA.query('SELECT … WHERE id=$1 LIMIT 1')` followed by `if (!rows.length)` for a plain read, insert, update or delete | `DATA.read('tbl').id(id).error(404)`, `DATA.insert()`, `DATA.modify()`, `DATA.remove()`; `DATA.query()` only for joins, aggregates and expressions ([section 12](12-postgresql.md)) |
 | `ROUTE('POST /x/', fn, ['upload'], 1024)` (Total.js 4) | `ROUTE('POST /x/ @upload <1MB', fn)` |
 | `CORS()` in every plugin | one `CORS()` in a definition |
 | One 2,000-line `definitions/func.js` | several definitions split by concern |
@@ -27,3 +28,5 @@ The mistakes that agents and newcomers produce most often. Each has a framework-
 | `src/`, `lib/`, `services/`, `repositories/`, `utils/`, `middleware/` | the framework directories ([section 2](02-project-structure.md)) |
 | `const` for every local, `forEach` with arrows, spaces, double quotes | `var`, classic `for`, tabs, single quotes ([section 5](05-coding-style.md)) |
 | Copying another product's tables and schema names | copy the mechanism: plugin + `NEWSCHEMA` + `DATA` + `FUNC` |
+| A file without a comment at its top; `// sets the value` above `x = value`; a "magic" number without a reason | A header that says what the file does and needs; comments that say why ([section 5](05-coding-style.md), "Comments") |
+| A product name, URL, token or limit written into an action; a helper that only works with this project's tables | Values in `config`, dependencies listed at the top, a unit that can be copied ([section 5](05-coding-style.md), "Reusable code") |
